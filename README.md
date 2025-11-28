@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stopwatch</title>
+    <title>Interactive Navigation Demo</title>
     <style>
         :root {
-            --bg: #080710;
-            --panel: rgba(17, 24, 39, 0.9);
-            --accent: #7c3aed;
-            --accent-2: #06b6d4;
-            --text: #f8fafc;
-            --muted: #94a3b8;
-            --danger: #ef4444;
+            --nav-bg: rgba(17, 21, 29, 0.55);
+            --nav-bg-scrolled: rgba(17, 21, 29, 0.95);
+            --nav-color: #f8f8f8;
+            --accent: #ff9f43;
+            --accent-secondary: #6c63ff;
+            --text: #1f1f1f;
+            --muted: #4d4d4d;
+            --transition-speed: 0.3s;
+            --radius: 18px;
         }
 
         * {
@@ -21,335 +23,341 @@
 
         body {
             margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: "Segoe UI", Arial, sans-serif;
             color: var(--text);
-            background: radial-gradient(circle at top, rgba(124, 58, 237, 0.35), transparent 55%),
-                radial-gradient(circle at bottom, rgba(6, 182, 212, 0.35), transparent 60%),
-                var(--bg);
+            background: radial-gradient(circle at top, #fef6ec, #f4f6fb 45%, #eef3ff);
+            min-height: 100vh;
+            scroll-behavior: smooth;
         }
 
-        main {
-            width: min(960px, 100%);
-            background: var(--panel);
-            border-radius: 32px;
-            padding: clamp(2rem, 5vw, 3.5rem);
-            box-shadow: 0 35px 90px rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(108, 99, 255, 0.23), transparent 55%),
+                        radial-gradient(circle at 80% 0%, rgba(255, 159, 67, 0.25), transparent 50%);
+            z-index: -1;
         }
 
         header {
-            text-align: center;
-            margin-bottom: 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 10;
+            background: var(--nav-bg);
+            backdrop-filter: blur(6px);
+            transition: background var(--transition-speed), box-shadow var(--transition-speed);
         }
 
-        h1 {
-            font-size: clamp(2rem, 4vw, 3rem);
-            margin: 0;
+        header.scrolled {
+            background: var(--nav-bg-scrolled);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
-        p {
-            margin: 0.5rem 0 0;
-            color: var(--muted);
-        }
-
-        .time-display {
+        nav {
             display: flex;
-            justify-content: center;
-            align-items: baseline;
-            gap: 1rem;
-            font-variant-numeric: tabular-nums;
-            margin: 2.5rem 0;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem clamp(1rem, 5vw, 4rem);
+            color: var(--nav-color);
         }
 
-        .time-display .primary {
-            font-size: clamp(3rem, 10vw, 5rem);
-            font-weight: 600;
-            letter-spacing: 0.12em;
-        }
-
-        .time-display .fraction {
-            font-size: clamp(2rem, 5vw, 3rem);
-            color: var(--muted);
-        }
-
-        .controls {
+        .brand {
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            font-size: 0.95rem;
             display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: center;
+            gap: 0.35rem;
+            align-items: center;
         }
 
-        button {
-            border: none;
+        .brand span {
+            padding: 0.2rem 0.6rem;
             border-radius: 999px;
-            padding: 0.95rem 2.25rem;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            color: #fff;
-            background: rgba(255, 255, 255, 0.08);
-            transition: transform 0.2s ease, background 0.2s ease, opacity 0.2s ease;
-            min-width: 140px;
+            background: linear-gradient(120deg, var(--accent), var(--accent-secondary));
+            color: #111;
+            font-size: 0.85rem;
         }
 
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-        }
-
-        button:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-        }
-
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.3);
-        }
-
-        .lap-panel {
-            margin-top: 2.75rem;
-            border-radius: 28px;
-            background: rgba(8, 8, 15, 0.45);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            max-height: 360px;
-            overflow: hidden;
+        .menu {
             display: flex;
-            flex-direction: column;
-        }
-
-        .lap-panel header {
-            padding: 1rem 1.75rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            margin: 0;
-            text-align: left;
-        }
-
-        .lap-panel h2 {
-            font-size: 1.2rem;
-            margin: 0;
-        }
-
-        .lap-list {
+            gap: 1.5rem;
             list-style: none;
             margin: 0;
             padding: 0;
-            overflow-y: auto;
-            scrollbar-width: thin;
         }
 
-        .lap-list li {
+        .menu a {
+            text-decoration: none;
+            color: var(--nav-color);
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            position: relative;
+            padding: 0.35rem 0;
+            transition: color var(--transition-speed);
+        }
+
+        .menu a::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform var(--transition-speed);
+        }
+
+        .menu a:hover,
+        .menu a:focus-visible,
+        .menu a.active {
+            color: var(--accent);
+        }
+
+        .menu a:hover::after,
+        .menu a:focus-visible::after,
+        .menu a.active::after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        main {
+            padding-top: 110px;
+        }
+
+        section {
+            min-height: 100vh;
+            padding: clamp(3rem, 7vw, 6rem) clamp(2rem, 10vw, 8rem);
             display: grid;
-            grid-template-columns: 120px 1fr 150px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: clamp(1.5rem, 4vw, 3rem);
+        }
+
+        .section-card {
+            background: #ffffffdd;
+            border-radius: var(--radius);
+            padding: clamp(1.5rem, 3vw, 2.5rem);
+            box-shadow: 0 20px 50px rgba(17, 21, 29, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(12px);
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+        }
+
+        .section-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 26px 60px rgba(17, 21, 29, 0.12);
+        }
+
+        section h2 {
+            margin: 0;
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: #0f172a;
+        }
+
+        section p {
+            max-width: 60ch;
+            line-height: 1.8;
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+
+        .section-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .section-card li {
+            position: relative;
+            padding-left: 1.25rem;
+        }
+
+        .section-card li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.6rem;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: linear-gradient(120deg, var(--accent), var(--accent-secondary));
+        }
+
+        .accent-pill {
+            display: inline-flex;
             align-items: center;
-            font-variant-numeric: tabular-nums;
-            padding: 0.9rem 1.75rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            gap: 0.5rem;
-        }
-
-        .lap-list li:last-child {
-            border-bottom: none;
-        }
-
-        .lap-label {
-            text-transform: uppercase;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            font-weight: 700;
             letter-spacing: 0.08em;
-            font-size: 0.8rem;
-            color: var(--muted);
+            text-transform: uppercase;
+            color: var(--accent-secondary);
         }
 
-        .lap-duration {
-            justify-self: end;
-            color: var(--muted);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 2.5rem 1rem;
-            color: var(--muted);
+        .accent-pill::before {
+            content: "";
+            width: 32px;
+            height: 2px;
+            background: var(--accent-secondary);
+            border-radius: 999px;
         }
 
         @media (max-width: 640px) {
-            .lap-list li {
-                grid-template-columns: 90px 1fr;
+            nav {
+                flex-direction: column;
+                gap: 1rem;
             }
 
-            .lap-duration {
-                justify-self: start;
-                grid-column: span 2;
-            }
-
-            button {
-                width: 100%;
+            .menu {
+                flex-wrap: wrap;
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
-    <main>
-        <header>
-            <h1>Stopwatch</h1>
-            <p>Start, pause, reset, and capture precise lap times.</p>
-        </header>
-
-        <section class="time-display" aria-label="Stopwatch display">
-            <span class="primary" id="time-main">00:00:00</span>
-            <span class="fraction" id="time-ms">.000</span>
-        </section>
-
-        <section class="controls" aria-label="Stopwatch controls">
-            <button class="btn-primary" id="start-btn">Start</button>
-            <button id="lap-btn" disabled>Lap</button>
-            <button class="btn-danger" id="reset-btn" disabled>Reset</button>
-        </section>
-
-        <section class="lap-panel" aria-live="polite">
-            <header>
-                <h2>Lap history</h2>
-            </header>
-            <ul class="lap-list" id="laps">
-                <li class="empty-state">No laps recorded yet.</li>
+    <header id="site-header">
+        <nav>
+            <div class="brand">
+                Prodigy
+                <span>UI</span>
+            </div>
+            <ul class="menu">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#work">Work</a></li>
+                <li><a href="#contact">Contact</a></li>
             </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home">
+            <div class="section-card">
+                <p class="accent-pill">Experience</p>
+                <h2>Refined navigation for every scroll</h2>
+                <p>
+                    Enjoy a crisp, glassy navigation bar that stays fixed to the top, subtly
+                    adapting as you scroll. Hover across the menu to reveal gentle accent cues,
+                    or keep exploring to watch the bar transform into a solid, elevated surface.
+                </p>
+                <p>
+                    This layout blends layered gradients, soft shadows, and tactile motion to
+                    create a polished experience that feels at home on any modern device.
+                </p>
+            </div>
+            <div class="section-card">
+                <p class="accent-pill">Highlights</p>
+                <ul>
+                    <li>Glassmorphic navigation with scroll-aware styling</li>
+                    <li>Animated menu links that react on hover and focus</li>
+                    <li>Section-aware active states powered by Intersection Observer</li>
+                    <li>Responsive grid layouts with soft cards and depth</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="services">
+            <div class="section-card">
+                <p class="accent-pill">Services</p>
+                <h2>Design systems with a modern edge</h2>
+                <p>
+                    From concept to prototype, we craft cohesive design languages that keep
+                    brands memorable. Each component is meticulously tuned for clarity,
+                    accessibility, and delight.
+                </p>
+            </div>
+            <div class="section-card">
+                <p class="accent-pill">Capabilities</p>
+                <p>
+                    • Responsive interface design<br>
+                    • Design tokens & component libraries<br>
+                    • Interaction & motion strategy<br>
+                    • Accessibility auditing
+                </p>
+            </div>
+        </section>
+
+        <section id="work">
+            <div class="section-card">
+                <p class="accent-pill">Showcase</p>
+                <h2>Human-centered experiences</h2>
+                <p>
+                    We merge storytelling with functional clarity—whether it’s a data-rich
+                    dashboard, a lifestyle brand launchpad, or an immersive product tour.
+                </p>
+            </div>
+            <div class="section-card">
+                <p class="accent-pill">Recent Drops</p>
+                <p>
+                    • Fintech analytics cockpit<br>
+                    • Immersive retail microsite<br>
+                    • Real-time collaboration suite
+                </p>
+            </div>
+        </section>
+
+        <section id="contact">
+            <div class="section-card">
+                <p class="accent-pill">Connect</p>
+                <h2>Let’s build something bold</h2>
+                <p>
+                    Ready for a navigation overhaul or a full experience refresh?
+                    We partner with teams to design systems that scale and stories that stick.
+                </p>
+            </div>
+            <div class="section-card">
+                <p class="accent-pill">Get in touch</p>
+                <p>
+                    hello@prodigy.studio<br>
+                    +1 (555) 201-2045<br>
+                    221B Aurora Street, CA
+                </p>
+            </div>
         </section>
     </main>
 
     <script>
-        const timeMain = document.getElementById("time-main");
-        const timeMs = document.getElementById("time-ms");
-        const startBtn = document.getElementById("start-btn");
-        const lapBtn = document.getElementById("lap-btn");
-        const resetBtn = document.getElementById("reset-btn");
-        const lapList = document.getElementById("laps");
+        const header = document.getElementById("site-header");
+        const menuLinks = document.querySelectorAll(".menu a");
+        const sections = [...document.querySelectorAll("section")];
 
-        let startTimestamp = 0;
-        let accumulated = 0;
-        let rafId = null;
-        let lapTimes = [];
-
-        const formatTime = (ms) => {
-            const hours = Math.floor(ms / 3_600_000);
-            const minutes = Math.floor((ms % 3_600_000) / 60_000);
-            const seconds = Math.floor((ms % 60_000) / 1_000);
-            const millis = Math.floor(ms % 1_000);
-
-            const pad = (value) => String(value).padStart(2, "0");
-            return {
-                main: `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`,
-                fraction: `.${String(millis).padStart(3, "0")}`
-            };
-        };
-
-        const renderTime = (ms) => {
-            const { main, fraction } = formatTime(ms);
-            timeMain.textContent = main;
-            timeMs.textContent = fraction;
-        };
-
-        const tick = () => {
-            const elapsed = accumulated + (performance.now() - startTimestamp);
-            renderTime(elapsed);
-            rafId = requestAnimationFrame(tick);
-        };
-
-        const setButtons = ({ running }) => {
-            if (running) {
-                startBtn.textContent = "Pause";
-                lapBtn.disabled = false;
-                resetBtn.disabled = false;
+        const handleScroll = () => {
+            if (window.scrollY > 20) {
+                header.classList.add("scrolled");
             } else {
-                startBtn.textContent = accumulated ? "Resume" : "Start";
-                lapBtn.disabled = !accumulated;
-                resetBtn.disabled = !accumulated;
+                header.classList.remove("scrolled");
             }
         };
 
-        const renderEmpty = () => {
-            lapList.innerHTML = '<li class="empty-state">No laps recorded yet.</li>';
+        const handleActiveLink = (entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute("id");
+                    menuLinks.forEach((link) => {
+                        link.classList.toggle("active", link.getAttribute("href") === `#${id}`);
+                    });
+                }
+            });
         };
 
-        const renderLaps = () => {
-            if (!lapTimes.length) {
-                renderEmpty();
-                return;
-            }
-
-            lapList.innerHTML = "";
-            lapTimes
-                .slice()
-                .reverse()
-                .forEach((lap, index, arr) => {
-                    const li = document.createElement("li");
-                    const overall = formatTime(lap.total);
-                    const prevTotal = arr[index + 1]?.total ?? 0;
-                    const lapDuration = formatTime(lap.total - prevTotal);
-
-                    li.innerHTML = `
-                        <span class="lap-label">Lap ${lapTimes.length - index}</span>
-                        <span>${overall.main}${overall.fraction}</span>
-                        <span class="lap-duration">+${lapDuration.main}${lapDuration.fraction}</span>
-                    `;
-                    lapList.appendChild(li);
-                });
-        };
-
-        startBtn.addEventListener("click", () => {
-            const running = Boolean(rafId);
-
-            if (running) {
-                cancelAnimationFrame(rafId);
-                rafId = null;
-                accumulated += performance.now() - startTimestamp;
-                renderTime(accumulated);
-                setButtons({ running: false });
-                return;
-            }
-
-            startTimestamp = performance.now();
-            rafId = requestAnimationFrame(tick);
-            setButtons({ running: true });
+        const observer = new IntersectionObserver(handleActiveLink, {
+            rootMargin: "-40% 0px -40% 0px",
+            threshold: 0,
         });
 
-        lapBtn.addEventListener("click", () => {
-            const current = accumulated + (rafId ? performance.now() - startTimestamp : 0);
-            lapTimes.push({ total: current });
-            renderLaps();
-        });
+        sections.forEach((section) => observer.observe(section));
 
-        resetBtn.addEventListener("click", () => {
-            if (rafId) {
-                cancelAnimationFrame(rafId);
-                rafId = null;
-            }
-            accumulated = 0;
-            renderTime(0);
-            lapTimes = [];
-            renderEmpty();
-            setButtons({ running: false });
-        });
-
-        document.addEventListener("keydown", (event) => {
-            if (event.code === "Space") {
-                event.preventDefault();
-                startBtn.click();
-            }
-            if (event.code === "KeyL") {
-                lapBtn.click();
-            }
-            if (event.code === "KeyR") {
-                resetBtn.click();
-            }
-        });
-
-        renderTime(0);
+        document.addEventListener("scroll", handleScroll, { passive: true });
+        handleScroll();
     </script>
 </body>
 </html>
- 
+
